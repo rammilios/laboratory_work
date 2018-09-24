@@ -1,14 +1,17 @@
 package finder;
 
-public class Test {
-    public static void main(String[] args) {
-        WordFinder finder = new WordFinder();
+import java.util.Scanner;
 
-        String[] files = new String[5];
-        for (int i = 1; i <= 5 ; i++) {
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+        Scanner scanner = new Scanner(System.in);
+        scanner.nextLine();
+
+        String[] files = new String[3];
+        for (int i = 1; i <= 3 ; i++) {
             files[i - 1] = "C:\\Users\\user\\Desktop\\Java\\text " + i + ".txt";
         }
-        String words[] = {"tmom", "mfa", "migpcv"};
-        finder.getOccurences(files, words, "C:\\Users\\user\\Desktop\\Java\\JavaItis5\\wordfinder\\result.txt");
+        String words[] = {"Muso", "idk", "ker"};
+        WordFinder.getOccurrences(files, words, "C:\\Users\\user\\Desktop\\Java\\JavaItis5\\wordfinder\\result.txt");
     }
 }

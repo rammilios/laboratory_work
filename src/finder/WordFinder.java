@@ -1,52 +1,36 @@
 package finder;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 
 public class WordFinder {
+    public static void getOccurrences(String[] sources, String[] words, String res) throws InterruptedException {
 
-    private List<String> resultList = new ArrayList<>();
+        ExecutorService executor;
+        List<Callable<Set<String>>> tasks = new ArrayList<>();
 
-    public void getOccurences(String[] sources, String[] words, String res) {
+        executor = ((sources.length) > 10 ?
+                Executors.newFixedThreadPool(4) :
+                Executors.newFixedThreadPool(sources.length));
 
-        ExecutorService threadPool = Executors.newFixedThreadPool(sources.length);
-        SingleFileParser singleFileParser = new SingleFileParser(resultList, words);
-
-        List<Future<Boolean>> futures = new ArrayList<>();
-        for (int i = 0; i < sources.length ; i++) {
-            final int j = i;
-            futures.add(CompletableFuture.supplyAsync(() -> singleFileParser.parseSingleFile(sources[j]), threadPool));
-        }
-
-        String result = "";
-        for (Future<Boolean> future : futures) {
+        Arrays.stream(sources).forEach(x -> tasks.add(new SingleFileParser(x, words)));
+        executor.invokeAll(tasks).forEach(f -> {
             try {
-                result += future.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
+                synchronized (res) {
+                    Files.write(Paths.get(res), f.get());
+                }
+
+            } catch (InterruptedException | ExecutionException | IOException e) {
                 e.printStackTrace();
             }
-        }
-
-        threadPool.shutdown();
-
-        System.out.println(resultList);
-        save("result.txt");
-    }
-
-    private void save(String fileName) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            for (String s : resultList) {
-                writer.write(s);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        });
+        executor.shutdown();
     }
 }

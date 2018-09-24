@@ -1,54 +1,39 @@
 package finder;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.List;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
-public class SingleFileParser {
+public class SingleFileParser implements Callable<Set<String>> {
 
-    private List<String> resultList;
+    private String source;
     private String[] words;
+    private Set<String> sentences = new HashSet<>();
 
-    public SingleFileParser(List<String> resultList, String[] words) {
-        this.resultList = resultList;
+    public SingleFileParser(String source, String[] words) {
         this.words = words;
+        this.source = source;
     }
 
-    public boolean parseSingleFile(String source) {
-
+    @Override
+    public Set<String> call() throws Exception {
         try (Scanner scanner = new Scanner(new File(source))) {
             Pattern pattern = Pattern.compile("[\\?\\.\\!]");
             scanner.useDelimiter(pattern);
             while (scanner.hasNext()) {
-                checkWordsInSentence(scanner.next(), words);
+                StringBuilder sb  = new StringBuilder();
+                String sentence = scanner.next().replace(System.getProperty("line.separator"), "");
+
+                Arrays.stream(words)
+                        .filter(word -> sentence.toLowerCase().contains(word.toLowerCase()))
+                        .forEach(x -> {
+                            sb.append(sentence.trim())
+                                    .append(scanner.findInLine("[?.!]"));
+                            sentences.add(sb.toString());
+                        });
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
+        } return sentences;
     }
 
-    private void checkWordsInSentence(String sentence, String[] words) {
-        for (String word : words) {
-            if (checkWordInSentence(sentence, word)) {
-                saveResultSentence(sentence);
-                break;
-            }
-        }
-    }
-
-    private boolean checkWordInSentence(String sentence, String word) {
-        sentence = sentence.toLowerCase();
-        return sentence.contains(word);
-
-    }
-
-    private void saveResultSentence(String sentence) {
-        synchronized (resultList) {
-            resultList.add(sentence);
-        }
-    }
 }
